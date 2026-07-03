@@ -1,0 +1,62 @@
+[
+  {
+    "id": 1,
+    "category": "付款問題",
+    "created_at": "2026-06-24",
+    "name": "張睿隆",
+    "email": "dlcscoffice@gmail.com",
+    "phone": "0424823900#206",
+    "gender": "",
+    "content": "想請問可以打公司統編嗎？會員是否已經含稅"
+  },
+  {
+    "id": 2,
+    "category": "付款問題",
+    "created_at": "2026-06-02",
+    "name": "蔡佳彤",
+    "email": "juliachua77@gmail.com",
+    "phone": "0952622653",
+    "gender": "",
+    "content": "您好，請問需要開立統編發票該怎麼進行？"
+  },
+  {
+    "id": 3,
+    "category": "其他",
+    "created_at": "2026-05-26",
+    "name": "Lin",
+    "email": "pt2008168@gmail.com",
+    "phone": "09880000000",
+    "gender": "",
+    "content": "您好我在酷澎有買貴公司產品椅子，因有些螺絲他會自行脫落找不到，這邊能補螺絲嗎"
+  },
+  {
+    "id": 4,
+    "category": "商品問題",
+    "created_at": "2026-05-14",
+    "name": "CHOU HSIEN-MIN",
+    "email": "docchou0527@gmail.com",
+    "phone": "0953546809",
+    "gender": "",
+    "content": "升降圓椅有沒有五爪固定，不要輪子"
+  },
+  {
+    "id": 5,
+    "category": "其他",
+    "created_at": "2026-03-05",
+    "name": "陳映儒",
+    "email": "atshopacutek@gmail.com",
+    "phone": "02-86926616#224",
+    "gender": "",
+    "content": "請問 CFLY 御貂摺疊美容床 Pro 超輕量旗艦版有售價 *10 張嗎？可以提供報價單嗎？"
+  },
+  {
+    "id": 6,
+    "category": "商品問題",
+    "created_at": "2026-02-06",
+    "name": "陳群",
+    "email": "james3511321@gmail.com",
+    "phone": "0987065146",
+    "gender": "",
+    "content": "您好，我這裡是安樂高中運動傷害防護室，近期在考慮採購護理椅，於網路上看到你們的相關資訊。"
+  }
+]

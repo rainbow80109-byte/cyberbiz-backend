@@ -1,0 +1,78 @@
+[
+  {
+    "id": 1,
+    "name": "CFLY Titan Rest 泰坦人體工學辦公椅",
+    "style": "CFLY Titan Rest 泰坦人體工學辦公椅",
+    "sku": "a095011",
+    "salePrice": 2180,
+    "listPrice": 3280,
+    "stock": 1,
+    "sold": 0,
+    "keyword": "CFLY Titan Rest 泰坦人體工學辦公椅",
+    "status": "已上架",
+    "tag": "",
+    "description": "",
+    "urlPath": "a095011",
+    "searchEnabled": true
+  },
+  {
+    "id": 2,
+    "name": "C-FLY Cloud Master 雲境人體工學高背辦公椅",
+    "style": "曜石黑",
+    "sku": "a094011",
+    "salePrice": 2580,
+    "listPrice": 3880,
+    "stock": 1,
+    "sold": 0,
+    "keyword": "高背,辦公椅",
+    "status": "已上架"
+  },
+  {
+    "id": 3,
+    "name": "C-FLY Night Ranger 夜巡者人體工學電競椅 腰靠+頸枕",
+    "style": "曜石黑",
+    "sku": "a092011",
+    "salePrice": 1980,
+    "listPrice": 2980,
+    "stock": 1,
+    "sold": 0,
+    "keyword": "電競椅,頸枕",
+    "status": "已上架"
+  },
+  {
+    "id": 4,
+    "name": "C-FLY Black Falcon 黑隼人體工學電競椅 腰靠+頸枕",
+    "style": "曜石黑",
+    "sku": "a092111",
+    "salePrice": 2980,
+    "listPrice": 4480,
+    "stock": 1,
+    "sold": 0,
+    "keyword": "黑隼,電競椅",
+    "status": "已上架"
+  },
+  {
+    "id": 5,
+    "name": "鋁製天花板",
+    "style": "單一款式",
+    "sku": "a122251",
+    "salePrice": 888888,
+    "listPrice": 8888890,
+    "stock": 0,
+    "sold": 0,
+    "keyword": "天花板",
+    "status": "已上架"
+  },
+  {
+    "id": 6,
+    "name": "電動麻將桌",
+    "style": "單一款式",
+    "sku": "c027001",
+    "salePrice": 25000,
+    "listPrice": 25000,
+    "stock": 0,
+    "sold": 0,
+    "keyword": "麻將桌",
+    "status": "已上架"
+  }
+]
