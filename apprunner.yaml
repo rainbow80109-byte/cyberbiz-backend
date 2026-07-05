@@ -4,7 +4,7 @@ runtime: nodejs20
 build:
   commands:
     pre-build:
-      - npm ci
+      - npm ci --omit=dev
 
 run:
   runtime-version: 20
