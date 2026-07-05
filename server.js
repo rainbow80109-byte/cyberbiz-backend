@@ -25,6 +25,26 @@ const dataDir = process.env.DATA_DIR || './data';
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
 
+// 在雲端使用 /tmp/data 時，先從專案內建 data 目錄補種子資料，避免首啟動空資料。
+const seedDataDir = path.join(__dirname, 'data');
+function seedDataFileIfMissing(fileName) {
+  const source = path.join(seedDataDir, fileName);
+  const target = path.join(dataDir, fileName);
+  if (!fs.existsSync(source) || fs.existsSync(target)) return;
+  try {
+    fs.copyFileSync(source, target);
+  } catch (err) {
+    console.warn(`種子資料複製失敗: ${fileName}`, err.message);
+  }
+}
+
+if (path.resolve(dataDir) !== path.resolve(seedDataDir)) {
+  seedDataFileIfMissing('orders.json');
+  seedDataFileIfMissing('customer_feedback.json');
+  seedDataFileIfMissing('products.json');
+  seedDataFileIfMissing('product_categories.json');
+}
+
 // 簡單的內存數據存儲 (用 JSON 代替 SQLite)
 const dbFile = path.join(dataDir, 'orders.json');
 const feedbackFile = path.join(dataDir, 'customer_feedback.json');
