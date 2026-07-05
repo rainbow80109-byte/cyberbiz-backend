@@ -21,7 +21,7 @@ app.get('/', (req, res) => {
 
 // 確保必要目錄存在
 const uploadDir = process.env.UPLOAD_DIR || './uploads';
-const dataDir = './data';
+const dataDir = process.env.DATA_DIR || './data';
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
 

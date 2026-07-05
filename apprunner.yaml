@@ -14,5 +14,7 @@ run:
   env:
     - name: NODE_ENV
       value: production
+    - name: DATA_DIR
+      value: /tmp/data
     - name: UPLOAD_DIR
-      value: ./uploads
+      value: /tmp/uploads
