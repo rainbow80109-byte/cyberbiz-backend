@@ -473,15 +473,7 @@ function syncMembersFromOrders() {
   return changed;
 }
 
-function requireExistingMember(name, phone, email) {
-  const member = findMemberByIdentity(name, phone, email);
-  if (!member) {
-    throw new Error('會員不存在，請先建立會員再建立訂單');
-  }
-  return member;
-}
-
-function upsertMemberForImport(name, phone, email, orderDateValue = '') {
+function upsertMemberForOrder(name, phone, email, orderDateValue = '', source = 'order') {
   const normalizedName = normalizeText(name);
   const normalizedPhone = normalizeText(phone);
   const normalizedEmail = normalizeText(email);
@@ -492,8 +484,8 @@ function upsertMemberForImport(name, phone, email, orderDateValue = '') {
     return existing;
   }
 
-  // 匯入時允許自動建立會員，避免「先建會員」流程阻擋大量匯入
-  const fallbackName = normalizedName || `匯入會員-${db.nextMemberId}`;
+  const label = source === 'manual' ? '手動會員' : '匯入會員';
+  const fallbackName = normalizedName || `${label}-${db.nextMemberId}`;
   const createdAt = toOrderDateIso(orderDateValue) || new Date().toISOString();
   const member = {
     id: db.nextMemberId++,
@@ -504,6 +496,11 @@ function upsertMemberForImport(name, phone, email, orderDateValue = '') {
   };
   db.members.push(member);
   return member;
+}
+
+function upsertMemberForImport(name, phone, email, orderDateValue = '') {
+  // 匯入時允許自動建立會員，避免「先建會員」流程阻擋大量匯入
+  return upsertMemberForOrder(name, phone, email, orderDateValue, 'import');
 }
 
 function orderDateToTs(value) {
@@ -887,7 +884,7 @@ app.post('/api/orders', (req, res) => {
     const normalizedAmount = typeof amount === 'number' && !isNaN(amount) && amount > 0 ? amount : 0;
     const normalizedDate = date || new Date().toISOString().slice(0, 10);
 
-    const member = requireExistingMember(name, phone, email);
+    const member = upsertMemberForOrder(name, phone, email, normalizedDate, 'manual');
     updateMemberCreatedAtFromOrder(member, normalizedDate);
 
     const newOrder = {
@@ -966,7 +963,7 @@ app.put('/api/orders/:id(\\d+)', (req, res) => {
     const normalizedAmount = typeof amount === 'number' && !isNaN(amount) && amount > 0 ? amount : 0;
     const normalizedDate = date || order.date || new Date().toISOString().slice(0, 10);
 
-    const member = requireExistingMember(name, phone, email);
+    const member = upsertMemberForOrder(name, phone, email, normalizedDate, 'manual');
     updateMemberCreatedAtFromOrder(member, normalizedDate);
 
     order.invoice = invoice || '';
