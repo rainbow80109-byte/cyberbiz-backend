@@ -5,6 +5,7 @@ const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
 const XLSX = require('xlsx');
+const { S3Client, GetObjectCommand, PutObjectCommand } = require('@aws-sdk/client-s3');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -50,6 +51,11 @@ const dbFile = path.join(dataDir, 'orders.json');
 const feedbackFile = path.join(dataDir, 'customer_feedback.json');
 const productsFile = path.join(dataDir, 'products.json');
 const productCategoriesFile = path.join(dataDir, 'product_categories.json');
+const managedDataFiles = ['orders.json', 'customer_feedback.json', 'products.json', 'product_categories.json'];
+const s3DataBucket = String(process.env.S3_DATA_BUCKET || '').trim();
+const s3DataPrefix = String(process.env.S3_DATA_PREFIX || 'apprunner-data').replace(/^\/+|\/+$/g, '');
+const s3DataEnabled = Boolean(s3DataBucket);
+const s3Client = s3DataEnabled ? new S3Client({}) : null;
 
 const defaultFeedbacks = [
   {
@@ -202,6 +208,70 @@ const defaultProductCategories = [
   { id: 10, name: '精選商品', isVisible: true, created_at: '2026-06-17T11:20:41.000Z' }
 ];
 
+function buildS3DataKey(fileName) {
+  return s3DataPrefix ? `${s3DataPrefix}/${fileName}` : fileName;
+}
+
+async function streamToUtf8(stream) {
+  if (stream && typeof stream.transformToString === 'function') {
+    return stream.transformToString();
+  }
+
+  const chunks = [];
+  for await (const chunk of stream) {
+    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+  }
+  return Buffer.concat(chunks).toString('utf-8');
+}
+
+async function hydrateDataFilesFromS3() {
+  if (!s3DataEnabled) return;
+
+  let restoredCount = 0;
+  for (const fileName of managedDataFiles) {
+    try {
+      const result = await s3Client.send(new GetObjectCommand({
+        Bucket: s3DataBucket,
+        Key: buildS3DataKey(fileName)
+      }));
+
+      if (!result.Body) continue;
+      const content = await streamToUtf8(result.Body);
+      fs.writeFileSync(path.join(dataDir, fileName), content, 'utf-8');
+      restoredCount += 1;
+    } catch (err) {
+      const status = err && err.$metadata ? err.$metadata.httpStatusCode : 0;
+      if (err.name === 'NoSuchKey' || status === 404) continue;
+      console.warn(`S3 還原資料失敗: ${fileName}`, err.message);
+    }
+  }
+
+  if (restoredCount > 0) {
+    console.log(`☁️ 已從 S3 還原 ${restoredCount} 個資料檔`);
+  }
+}
+
+let s3PersistQueue = Promise.resolve();
+function queueUploadDataFileToS3(fileName) {
+  if (!s3DataEnabled) return;
+
+  const localPath = path.join(dataDir, fileName);
+  if (!fs.existsSync(localPath)) return;
+
+  s3PersistQueue = s3PersistQueue.then(async () => {
+    try {
+      await s3Client.send(new PutObjectCommand({
+        Bucket: s3DataBucket,
+        Key: buildS3DataKey(fileName),
+        Body: fs.readFileSync(localPath),
+        ContentType: 'application/json; charset=utf-8'
+      }));
+    } catch (err) {
+      console.warn(`S3 同步資料失敗: ${fileName}`, err.message);
+    }
+  });
+}
+
 function loadData() {
   try {
     if (fs.existsSync(dbFile)) {
@@ -215,14 +285,17 @@ function loadData() {
 
 function saveData(data) {
   fs.writeFileSync(dbFile, JSON.stringify(data, null, 2), 'utf-8');
+  queueUploadDataFileToS3('orders.json');
 }
 
 function saveProductsData(data) {
   fs.writeFileSync(productsFile, JSON.stringify(data, null, 2), 'utf-8');
+  queueUploadDataFileToS3('products.json');
 }
 
 function saveProductCategoriesData(data) {
   fs.writeFileSync(productCategoriesFile, JSON.stringify(data, null, 2), 'utf-8');
+  queueUploadDataFileToS3('product_categories.json');
 }
 
 function loadFeedbackData() {
@@ -236,6 +309,7 @@ function loadFeedbackData() {
   }
 
   fs.writeFileSync(feedbackFile, JSON.stringify(defaultFeedbacks, null, 2), 'utf-8');
+  queueUploadDataFileToS3('customer_feedback.json');
   return [...defaultFeedbacks];
 }
 
@@ -250,6 +324,7 @@ function loadProductsData() {
   }
 
   fs.writeFileSync(productsFile, JSON.stringify(defaultProducts, null, 2), 'utf-8');
+  queueUploadDataFileToS3('products.json');
   return [...defaultProducts];
 }
 
@@ -264,6 +339,7 @@ function loadProductCategoriesData() {
   }
 
   fs.writeFileSync(productCategoriesFile, JSON.stringify(defaultProductCategories, null, 2), 'utf-8');
+  queueUploadDataFileToS3('product_categories.json');
   return [...defaultProductCategories];
 }
 
@@ -324,6 +400,13 @@ let db = ensureDbShape(loadData());
 let feedbackData = loadFeedbackData();
 let productsData = loadProductsData();
 let productCategoriesData = loadProductCategoriesData();
+
+function reloadInMemoryStores() {
+  db = ensureDbShape(loadData());
+  feedbackData = loadFeedbackData();
+  productsData = loadProductsData();
+  productCategoriesData = loadProductCategoriesData();
+}
 
 function findMemberByIdentity(name, phone, email) {
   const key = buildMemberKey(name, phone, email);
@@ -575,9 +658,7 @@ function qtyBucket(qty) {
 }
 
 const startupSynced = syncMembersFromOrders();
-if (startupSynced) {
-  saveData(db);
-}
+if (startupSynced) saveData(db);
 
 // 配置 multer
 const storage = multer.diskStorage({
@@ -2201,12 +2282,27 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'Server is running' });
 });
 
-// 啟動服務器
-app.listen(PORT, () => {
-  console.log(`✅ 後端服務器運行於 http://localhost:${PORT}`);
-  console.log(`📊 數據文件路徑: ${dbFile}`);
-  console.log(`📥 上傳目錄: ${uploadDir}`);
-});
+async function startServer() {
+  try {
+    await hydrateDataFilesFromS3();
+    reloadInMemoryStores();
+    const synced = syncMembersFromOrders();
+    if (synced) saveData(db);
+  } catch (err) {
+    console.warn('啟動時 S3 還原失敗，改用本地資料:', err.message);
+  }
+
+  app.listen(PORT, () => {
+    console.log(`✅ 後端服務器運行於 http://localhost:${PORT}`);
+    console.log(`📊 數據文件路徑: ${dbFile}`);
+    console.log(`📥 上傳目錄: ${uploadDir}`);
+    if (s3DataEnabled) {
+      console.log(`☁️ S3 同步已啟用: s3://${s3DataBucket}/${s3DataPrefix}`);
+    }
+  });
+}
+
+startServer();
 
 process.on('SIGINT', () => {
   saveData(db);
